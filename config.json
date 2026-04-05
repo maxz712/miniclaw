@@ -1,4 +1,5 @@
 {
+  "backend": "claude",
   "workspace": "./workspace",
   "channels": {
     "discord": {

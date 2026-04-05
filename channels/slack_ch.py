@@ -32,7 +32,7 @@ class SlackChannel(Channel):
                 user_id=event["user"], user_name=event.get("user", ""),
                 text=event.get("text", ""), attachments=attachments, reply=reply, raw=event,
             )
-            await handle_message(msg, ch.claude_cli, ch.skills, ch.config)
+            await handle_message(msg, ch.cli, ch.skills, ch.config)
 
         handler = AsyncSocketModeHandler(self.app, self.ch_config["app_token"])
         asyncio.create_task(handler.start_async())

@@ -36,7 +36,7 @@ class DiscordChannel(Channel):
                 text=message.content, attachments=attachments, reply=reply, raw=message,
             )
             async with message.channel.typing():
-                await handle_message(msg, ch.claude_cli, ch.skills, ch.config)
+                await handle_message(msg, ch.cli, ch.skills, ch.config)
 
         asyncio.create_task(self.client.start(self.ch_config["token"]))
 

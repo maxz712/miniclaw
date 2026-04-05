@@ -6,8 +6,8 @@ logger = logging.getLogger("openclaw.heartbeat")
 
 
 class Heartbeat:
-    def __init__(self, claude_cli, skills, active_channels: dict, config: dict):
-        self.claude_cli = claude_cli
+    def __init__(self, cli, skills, active_channels: dict, config: dict):
+        self.cli = cli
         self.skills = skills
         self.channels = active_channels
         self.config = config
@@ -34,10 +34,10 @@ class Heartbeat:
 
         prompt = f"Run your heartbeat check. Here is your checklist:\n\n{content}\n\nIf nothing needs attention, respond with exactly: HEARTBEAT_OK"
         agent = self.config["agents"].get("default", {})
-        session_id = self.claude_cli.get_session_id("heartbeat:default")
+        session_id = self.cli.get_session_id("heartbeat:default")
         skills_prompt = self.skills.build_prompt()
 
-        response = await self.claude_cli.ask(prompt, session_id, agent, skills_prompt)
+        response = await self.cli.ask(prompt, session_id, agent, skills_prompt)
 
         if "HEARTBEAT_OK" in response:
             logger.debug("Heartbeat: all clear")

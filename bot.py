@@ -4,7 +4,7 @@ import logging
 import sys
 from pathlib import Path
 
-from claude_cli import ClaudeCLI
+from cli_runner import CLIRunner
 from skills import SkillLoader
 from heartbeat import Heartbeat
 
@@ -19,7 +19,7 @@ ADAPTERS = {
 }
 
 
-def load_adapter(name, ch_config, claude_cli, skills, config):
+def load_adapter(name, ch_config, cli, skills, config):
     if name not in ADAPTERS:
         logger.warning(f"Unknown channel: {name}")
         return None
@@ -27,21 +27,21 @@ def load_adapter(name, ch_config, claude_cli, skills, config):
     import importlib
     mod = importlib.import_module(module_path)
     cls = getattr(mod, class_name)
-    return cls(ch_config, claude_cli, skills, config)
+    return cls(ch_config, cli, skills, config)
 
 
 async def main():
     config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("config.json")
     config = json.loads(config_path.read_text())
 
-    claude_cli = ClaudeCLI(config)
+    cli = CLIRunner(config)
     skills = SkillLoader(str(Path(config.get("workspace", "./workspace")) / "skills"))
 
     active_channels = {}
     for name, ch_config in config.get("channels", {}).items():
         if not ch_config.get("enabled"):
             continue
-        adapter = load_adapter(name, ch_config, claude_cli, skills, config)
+        adapter = load_adapter(name, ch_config, cli, skills, config)
         if adapter:
             await adapter.start()
             active_channels[name] = adapter
@@ -52,11 +52,11 @@ async def main():
         return
 
     if config.get("heartbeat", {}).get("enabled"):
-        hb = Heartbeat(claude_cli, skills, active_channels, config)
+        hb = Heartbeat(cli, skills, active_channels, config)
         asyncio.create_task(hb.start())
         logger.info("Heartbeat started")
 
-    logger.info(f"OpenClaw running with channels: {', '.join(active_channels)}")
+    logger.info(f"MiniClaw running with channels: {', '.join(active_channels)}")
     await asyncio.Event().wait()
 
 

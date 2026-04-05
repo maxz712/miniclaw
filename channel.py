@@ -19,9 +19,9 @@ class Channel(ABC):
     name: str = ""
     msg_limit: int = 2000
 
-    def __init__(self, ch_config, claude_cli, skills, config):
+    def __init__(self, ch_config, cli_runner, skills, config):
         self.ch_config = ch_config
-        self.claude_cli = claude_cli
+        self.cli = cli_runner
         self.skills = skills
         self.config = config
         self.msg_limit = ch_config.get("msg_limit", 2000)
@@ -50,7 +50,7 @@ def split_message(text: str, limit: int = 2000) -> list[str]:
     return chunks
 
 
-async def handle_message(msg: Message, claude_cli, skills, config):
+async def handle_message(msg: Message, cli, skills, config):
     allowed = config.get("allowed_user_ids", [])
     if allowed and msg.user_id not in allowed:
         return
@@ -66,15 +66,15 @@ async def handle_message(msg: Message, claude_cli, skills, config):
 
     # Commands
     if text.lower() in ("reset", "new", "clear"):
-        agent_name, agent = claude_cli.get_agent(msg.platform, msg.channel_id)
-        key = claude_cli.get_session_key(agent_name, msg.platform, msg.channel_id, msg.user_id, agent.get("session_per", "channel"))
-        claude_cli.reset_session(key)
+        agent_name, agent = cli.get_agent(msg.platform, msg.channel_id)
+        key = cli.get_session_key(agent_name, msg.platform, msg.channel_id, msg.user_id, agent.get("session_per", "channel"))
+        cli.reset_session(key)
         await msg.reply("Session reset.")
         return
 
     if text.lower().startswith("agent "):
         agent_name = text[6:].strip()
-        if claude_cli.set_agent(msg.platform, msg.channel_id, agent_name):
+        if cli.set_agent(msg.platform, msg.channel_id, agent_name):
             await msg.reply(f"Switched to agent: {agent_name}")
         else:
             available = ", ".join(config["agents"].keys())
@@ -82,16 +82,16 @@ async def handle_message(msg: Message, claude_cli, skills, config):
         return
 
     # Build prompt
-    agent_name, agent = claude_cli.get_agent(msg.platform, msg.channel_id)
+    agent_name, agent = cli.get_agent(msg.platform, msg.channel_id)
     prompt = f"[{msg.platform} user: {msg.user_name}] {text}"
     if msg.attachments:
         prompt += "\n\nAttached files:\n" + "\n".join(f"- {p}" for p in msg.attachments)
 
-    key = claude_cli.get_session_key(agent_name, msg.platform, msg.channel_id, msg.user_id, agent.get("session_per", "channel"))
-    session_id = claude_cli.get_session_id(key)
+    key = cli.get_session_key(agent_name, msg.platform, msg.channel_id, msg.user_id, agent.get("session_per", "channel"))
+    session_id = cli.get_session_id(key)
     skills_prompt = skills.build_prompt()
 
-    response = await claude_cli.ask(prompt, session_id, agent, skills_prompt)
+    response = await cli.ask(prompt, session_id, agent, skills_prompt)
 
     max_len = config.get("max_response_length", 8000)
     if len(response) > max_len:

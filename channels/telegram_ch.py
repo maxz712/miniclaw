@@ -41,7 +41,7 @@ class TelegramChannel(Channel):
                 text=msg.text, attachments=attachments, reply=reply, raw=msg,
             )
             await context.bot.send_chat_action(chat_id=msg.chat_id, action="typing")
-            await handle_message(m, ch.claude_cli, ch.skills, ch.config)
+            await handle_message(m, ch.cli, ch.skills, ch.config)
 
         self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_message))
         await self.app.initialize()

@@ -42,7 +42,7 @@ class WhatsAppChannel(Channel):
                 user_id=wa_msg.from_user.wa_id, user_name=wa_msg.from_user.name or "",
                 text=wa_msg.text or "", attachments=attachments, reply=reply, raw=wa_msg,
             )
-            await handle_message(msg, ch.claude_cli, ch.skills, ch.config)
+            await handle_message(msg, ch.cli, ch.skills, ch.config)
 
         port = self.ch_config.get("webhook_port", 8080)
         config = uvicorn.Config(self.fastapi, host="0.0.0.0", port=port, log_level="warning")
