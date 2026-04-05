@@ -31,7 +31,12 @@ def load_adapter(name, ch_config, cli, skills, config):
 
 
 async def main():
-    config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("config.json")
+    if len(sys.argv) > 1:
+        config_path = Path(sys.argv[1])
+    elif Path("config.local.json").exists():
+        config_path = Path("config.local.json")
+    else:
+        config_path = Path("config.json")
     config = json.loads(config_path.read_text())
 
     cli = CLIRunner(config)

@@ -87,9 +87,31 @@ class CLIRunner:
                 proc.kill()
                 return f"[Error: {backend_name} timed out after {timeout}s]"
 
-        if proc.returncode != 0:
-            err = stderr.decode(errors="replace").strip()[:500]
-            return f"[Error: {backend_name} exited with code {proc.returncode}]\n{err}"
+            if proc.returncode != 0:
+                err = stderr.decode(errors="replace").strip()
+                # Session conflict — rotate to a new session and retry once
+                if "already in use" in err:
+                    new_id = str(uuid.uuid4())
+                    # Find and update the session key that had this ID
+                    for k, v in self.sessions.items():
+                        if v == session_id:
+                            self.sessions[k] = new_id
+                            break
+                    cmd, env = getattr(self, backend["build_cmd"])(prompt, new_id, agent, skills_prompt)
+                    proc = await asyncio.create_subprocess_exec(
+                        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                        env={**os.environ, **env} if env else None,
+                    )
+                    try:
+                        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+                    except asyncio.TimeoutError:
+                        proc.kill()
+                        return f"[Error: {backend_name} timed out after {timeout}s]"
+                    if proc.returncode != 0:
+                        err = stderr.decode(errors="replace").strip()[:500]
+                        return f"[Error: {backend_name} exited with code {proc.returncode}]\n{err}"
+                else:
+                    return f"[Error: {backend_name} exited with code {proc.returncode}]\n{err[:500]}"
 
         return parse_fn(stdout.decode(errors="replace"))
 
