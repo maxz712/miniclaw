@@ -1,0 +1,47 @@
+{
+  "workspace": "./workspace",
+  "channels": {
+    "discord": {
+      "enabled": false,
+      "token": "YOUR_DISCORD_BOT_TOKEN",
+      "mention_only": true,
+      "msg_limit": 2000
+    },
+    "telegram": {
+      "enabled": false,
+      "token": "YOUR_TELEGRAM_BOT_TOKEN",
+      "msg_limit": 4096
+    },
+    "slack": {
+      "enabled": false,
+      "bot_token": "xoxb-YOUR-TOKEN",
+      "app_token": "xapp-YOUR-TOKEN",
+      "msg_limit": 4000
+    },
+    "whatsapp": {
+      "enabled": false,
+      "phone_number_id": "YOUR_PHONE_NUMBER_ID",
+      "access_token": "YOUR_WHATSAPP_CLOUD_API_TOKEN",
+      "verify_token": "YOUR_WEBHOOK_VERIFY_TOKEN",
+      "webhook_port": 8080,
+      "msg_limit": 4096
+    }
+  },
+  "command_prefix": "!c",
+  "allowed_user_ids": [],
+  "agents": {
+    "default": {
+      "system_prompt": "You are a helpful assistant.",
+      "session_per": "channel",
+      "allowed_tools": "",
+      "model": ""
+    }
+  },
+  "heartbeat": {
+    "enabled": false,
+    "interval_minutes": 30,
+    "notify": [{"channel": "discord", "id": "CHANNEL_ID"}]
+  },
+  "subprocess_timeout_seconds": 300,
+  "max_response_length": 8000
+}
