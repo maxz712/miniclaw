@@ -50,35 +50,76 @@ def split_message(text: str, limit: int = 2000) -> list[str]:
     return chunks
 
 
-async def handle_message(msg: Message, cli, skills, config):
-    allowed = config.get("allowed_user_ids", [])
-    if allowed and msg.user_id not in allowed:
-        return
+def _get_response_mode(msg, config):
+    ch_config = config.get("channels", {}).get(msg.platform, {})
+    return ch_config.get("response_mode") or config.get("response_mode", "command")
 
-    prefix = config.get("command_prefix", "!c")
+
+def _extract_prompt(msg, config):
+    """Return (text, is_command) or None if message should be ignored."""
     text = msg.text.strip()
-
-    if not text.startswith(prefix):
-        return
-    text = text[len(prefix):].strip()
     if not text:
-        return
+        return None
+    mode = _get_response_mode(msg, config)
 
-    # Commands
-    if text.lower() in ("reset", "new", "clear"):
+    # /commands always work in both modes
+    if text.startswith("/"):
+        return text[1:].strip(), True
+
+    # Legacy prefix commands (!c etc) work in command mode
+    prefix = config.get("command_prefix", "!c")
+    if text.startswith(prefix):
+        cmd = text[len(prefix):].strip()
+        if cmd:
+            return cmd, True
+        return None
+
+    # In auto mode, every message is a prompt
+    if mode == "auto":
+        return text, False
+
+    # In command mode, ignore messages without prefix
+    return None
+
+
+async def handle_command(msg, cli, config, cmd_text):
+    """Handle /reset, /agent, etc. Returns True if handled."""
+    if cmd_text.lower() in ("reset", "new", "clear"):
         agent_name, agent = cli.get_agent(msg.platform, msg.channel_id)
         key = cli.get_session_key(agent_name, msg.platform, msg.channel_id, msg.user_id, agent.get("session_per", "channel"))
         cli.reset_session(key)
         await msg.reply("Session reset.")
-        return
+        return True
 
-    if text.lower().startswith("agent "):
-        agent_name = text[6:].strip()
+    if cmd_text.lower().startswith("agent "):
+        agent_name = cmd_text[6:].strip()
         if cli.set_agent(msg.platform, msg.channel_id, agent_name):
             await msg.reply(f"Switched to agent: {agent_name}")
         else:
             available = ", ".join(config["agents"].keys())
             await msg.reply(f"Unknown agent. Available: {available}")
+        return True
+
+    return False
+
+
+async def handle_message(msg: Message, cli, skills, config):
+    allowed = config.get("allowed_user_ids", [])
+    if allowed and msg.user_id not in allowed:
+        return
+
+    result = _extract_prompt(msg, config)
+    if result is None:
+        return
+
+    text, is_command = result
+
+    # Try handling as a bot command first
+    if is_command and await handle_command(msg, cli, config, text):
+        return
+
+    # If it was a /command we don't recognize, treat as prompt in auto mode, ignore in command mode
+    if is_command and _get_response_mode(msg, config) == "command":
         return
 
     # Build prompt

@@ -1,0 +1,16 @@
+[Unit]
+Description=MiniClaw AI Assistant Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/Users/xinmingzhang/miniclaw
+ExecStart=/Users/xinmingzhang/miniclaw/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/Users/xinmingzhang/miniclaw/bot.log
+StandardError=append:/Users/xinmingzhang/miniclaw/bot.log
+
+[Install]
+WantedBy=default.target

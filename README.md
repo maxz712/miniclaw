@@ -4,6 +4,36 @@ A lightweight [OpenClaw](https://github.com/openclaw/openclaw) alternative that 
 
 675 lines of Python. Same core features. Supports multiple AI backends.
 
+## Demo
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  #general  ·  MiniClaw Bot                                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ming: can you create a flask app with a /health endpoint?  │
+│                                                             │
+│  Miniclaw: I'll create that for you.                        │
+│                                                             │
+│  Created `app.py` with a Flask app and `/health` endpoint:  │
+│                                                             │
+│  ```python                                                  │
+│  from flask import Flask, jsonify                           │
+│  app = Flask(__name__)                                      │
+│                                                             │
+│  @app.route("/health")                                      │
+│  def health():                                              │
+│      return jsonify(status="ok")                            │
+│  ```                                                        │
+│                                                             │
+│  Run it with: `flask run`                                   │
+│                                                             │
+│  ming: /reset                                               │
+│  Miniclaw: Session reset.                                   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## Supported backends
 
 | Backend | CLI | What it can do |
@@ -28,6 +58,7 @@ Set `"backend": "claude"` (or `"gemini"`, `"codex"`, `"aider"`) in config.json. 
 
 ```bash
 git clone git@github.com:maxz712/miniclaw.git && cd miniclaw
+python3 -m venv .venv && .venv/bin/pip install .
 ```
 
 Then open Claude Code and say:
@@ -36,15 +67,27 @@ Then open Claude Code and say:
 Read SETUP.md and help me set up miniclaw
 ```
 
-Claude will install dependencies, walk you through getting platform tokens, configure everything, and test it.
+Claude will walk you through getting platform tokens, configure everything, set up the systemd service, and test it.
 
 ## Usage
+
+In **auto mode** (default), just type naturally — the bot responds to every message in its channels.
+
+```
+hello                     # chat with the AI (auto mode)
+/reset                    # reset conversation
+/agent <name>             # switch agent
+```
+
+In **command mode**, prefix messages with `!c` (or your configured prefix):
 
 ```
 !c hello                  # chat with the AI
 !c reset                  # reset conversation
 !c agent <name>           # switch agent
 ```
+
+Set `"response_mode": "auto"` or `"command"` in config.json (global or per-channel).
 
 ## Features
 
@@ -93,7 +136,7 @@ Run different agents on different backends:
 }
 ```
 
-Switch in chat: `!c agent coder`
+Switch in chat: `/agent coder`
 
 ## Project structure
 
@@ -110,6 +153,8 @@ miniclaw/
 │   ├── slack_ch.py     # Slack adapter
 │   └── whatsapp_ch.py  # WhatsApp adapter
 ├── config.json         # All configuration
+├── pyproject.toml      # Package definition + dependencies
+├── miniclaw.service    # Systemd unit for 24/7 operation
 ├── SETUP.md            # Interactive setup guide (for Claude Code)
 ├── CLAUDE.md           # Project context for Claude Code
 └── workspace/

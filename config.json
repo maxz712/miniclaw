@@ -1,11 +1,11 @@
 {
   "backend": "claude",
+  "response_mode": "auto",
   "workspace": "./workspace",
   "channels": {
     "discord": {
       "enabled": false,
       "token": "YOUR_DISCORD_BOT_TOKEN",
-      "mention_only": true,
       "msg_limit": 2000
     },
     "telegram": {

@@ -1,0 +1,19 @@
+[project]
+name = "miniclaw"
+version = "0.1.0"
+description = "Lightweight bridge from messaging platforms to local AI coding CLIs"
+requires-python = ">=3.10"
+dependencies = [
+    "discord.py>=2.0",
+    "python-telegram-bot>=20.0",
+    "slack-bolt>=1.18",
+    "pywa[fastapi]>=3.0",
+    "uvicorn>=0.20",
+]
+
+[tool.setuptools]
+py-modules = ["bot", "channel", "cli_runner", "skills", "heartbeat"]
+packages = ["channels"]
+
+[project.scripts]
+miniclaw = "bot:main"

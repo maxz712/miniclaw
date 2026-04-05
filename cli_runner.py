@@ -34,6 +34,7 @@ class CLIRunner:
         self.config = config
         self.sessions: dict[str, str] = {}
         self.agent_selection: dict[str, str] = {}
+        self._locks: dict[str, asyncio.Lock] = {}
 
     def get_session_key(self, agent_name, platform, channel_id, user_id, session_per):
         target = channel_id if session_per == "channel" else user_id
@@ -59,6 +60,11 @@ class CLIRunner:
         self.agent_selection[f"{platform}:{channel_id}"] = agent_name
         return True
 
+    def _get_lock(self, session_id):
+        if session_id not in self._locks:
+            self._locks[session_id] = asyncio.Lock()
+        return self._locks[session_id]
+
     async def ask(self, prompt, session_id, agent, skills_prompt=""):
         backend_name = agent.get("backend") or self.config.get("backend", "claude")
         backend = BACKENDS.get(backend_name)
@@ -69,15 +75,17 @@ class CLIRunner:
         parse_fn = getattr(self, backend["parse_output"])
         timeout = self.config.get("subprocess_timeout_seconds", 300)
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-            env={**os.environ, **env} if env else None,
-        )
-        try:
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            proc.kill()
-            return f"[Error: {backend_name} timed out after {timeout}s]"
+        # Serialize requests per session to prevent "session already in use" errors
+        async with self._get_lock(session_id):
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                env={**os.environ, **env} if env else None,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            except asyncio.TimeoutError:
+                proc.kill()
+                return f"[Error: {backend_name} timed out after {timeout}s]"
 
         if proc.returncode != 0:
             err = stderr.decode(errors="replace").strip()[:500]
