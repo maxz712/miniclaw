@@ -1,6 +1,8 @@
 # MiniClaw
 
-Minimal open-source AI assistant that bridges Discord, Telegram, Slack, and WhatsApp to your local [Claude Code](https://claude.com/claude-code) CLI. ~550 lines of Python.
+A lightweight [OpenClaw](https://github.com/openclaw/openclaw) alternative that uses the local [Claude Code](https://claude.com/claude-code) CLI instead of the Anthropic API — bypassing the Anthropic ban on Claude powering third-party agentic tools like OpenClaw.
+
+~550 lines of Python. Same core features. No API keys needed beyond your Claude Code subscription.
 
 ## Setup
 
