@@ -27,6 +27,7 @@
       "msg_limit": 4096
     }
   },
+  "permission_mode": "auto",
   "command_prefix": "!c",
   "allowed_user_ids": [],
   "agents": {

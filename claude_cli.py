@@ -39,6 +39,13 @@ class ClaudeCLI:
 
         cmd = ["claude", "--session-id", session_id, "-p", prompt, "--output-format", "json", "--add-dir", workspace]
 
+        # Permission mode: needed for non-interactive -p mode so Claude can actually act
+        # "acceptEdits" = auto-approve file edits, prompt for shell commands
+        # "auto" = auto-approve safe actions, prompt for risky ones
+        # "bypassPermissions" = approve everything (use with caution)
+        permission_mode = agent.get("permission_mode") or self.config.get("permission_mode", "auto")
+        cmd += ["--permission-mode", permission_mode]
+
         if skills_prompt:
             cmd += ["--append-system-prompt", skills_prompt]
         if agent.get("system_prompt"):
