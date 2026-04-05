@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import shutil
 import uuid
 
 
@@ -27,6 +28,13 @@ BACKENDS = {
         "parse_output": "_parse_text_output",
     },
 }
+
+# Resolve CLI binaries to absolute paths at import time so systemd services
+# work without needing a custom PATH.
+for _backend in BACKENDS.values():
+    _resolved = shutil.which(_backend["bin"])
+    if _resolved:
+        _backend["bin"] = _resolved
 
 
 class CLIRunner:
@@ -119,7 +127,7 @@ class CLIRunner:
 
     def _build_claude_cmd(self, prompt, session_id, agent, skills_prompt):
         workspace = self.config.get("workspace", "./workspace")
-        cmd = ["claude", "--session-id", session_id, "-p", prompt,
+        cmd = [BACKENDS["claude"]["bin"], "--session-id", session_id, "-p", prompt,
                "--output-format", "json", "--add-dir", workspace]
         perm = agent.get("permission_mode") or self.config.get("permission_mode", "auto")
         cmd += ["--permission-mode", perm]
@@ -143,7 +151,7 @@ class CLIRunner:
     # ── Gemini ──────────────────────────────────────────────
 
     def _build_gemini_cmd(self, prompt, session_id, agent, skills_prompt):
-        cmd = ["gemini", "-p", prompt, "-o", "json"]
+        cmd = [BACKENDS["gemini"]["bin"], "-p", prompt, "-o", "json"]
         approval = agent.get("permission_mode") or self.config.get("permission_mode", "auto")
         approval_map = {"auto": "auto_edit", "bypassPermissions": "yolo", "acceptEdits": "auto_edit"}
         cmd += ["--approval-mode", approval_map.get(approval, approval)]
@@ -179,7 +187,7 @@ class CLIRunner:
         full_prompt = prompt
         if skills_prompt:
             full_prompt = f"{skills_prompt}\n\n{prompt}"
-        cmd = ["codex", "exec", full_prompt, "--json"]
+        cmd = [BACKENDS["codex"]["bin"], "exec", full_prompt, "--json"]
         approval = agent.get("permission_mode") or self.config.get("permission_mode", "auto")
         if approval == "bypassPermissions":
             cmd += ["--full-auto"]
@@ -206,7 +214,7 @@ class CLIRunner:
         full_prompt = prompt
         if skills_prompt:
             full_prompt = f"{skills_prompt}\n\n{prompt}"
-        cmd = ["aider", "--message", full_prompt, "--yes", "--no-pretty", "--no-stream"]
+        cmd = [BACKENDS["aider"]["bin"], "--message", full_prompt, "--yes", "--no-pretty", "--no-stream"]
         if agent.get("model"):
             cmd += ["--model", agent["model"]]
         return cmd, {}
